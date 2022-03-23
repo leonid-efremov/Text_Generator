@@ -1,0 +1,10 @@
+
+DontRename&PlaceInOneFolder
+*.txt
+*.ico
+*.rar
+prog/Text_Generator/Text_Generator.exe
+prog/Text_GeneratorGUI.py
+*.json
+word_generator.ui
+words
