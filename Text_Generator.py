@@ -12,6 +12,9 @@ import json
 import pickle
 import pandas as pd
 from random import choice
+import torch
+from torch import nn
+import torch.nn.functional as F
 
 
 
@@ -29,9 +32,16 @@ class TextGenerator:
         self.init_word = None
         self.num_words = 15
         
-        a = ord('а')  # add all letters which needed a.e. all russian alphabet
-        self.alphabet = ''.join([chr(i) for i in range(a, a + 32)] 
+        a = ord('а')  # add all letters which needed - russian alphabet (abc)
+        self.abc = ''.join([chr(i) for i in range(a, a + 32)] 
                                 + [' '] + ['\n'] + [chr(a + 33)])
+        
+    def encode(self):
+        """
+        Encode text from string to integer
+        """
+        chars = list(set(self.train_text))
+        pass
         
 
     def fit(self, source='WarAndPeace1.txt'):
@@ -48,19 +58,27 @@ class TextGenerator:
                 for i in t['messages']:
                     self.train_text += str(i['text']) + ' '  
 
-         
+        #with open('DontRename&PlaceInOneFolder', 'wb') as w:
+        with open('words', 'wb') as w:  # save data to file
+            pickle.dump(self.train_text, w)
+            
+        
+    def _preprocess(self, text):
+        """
+        Create preprocessed data for model from text
+        """
         # remove all sybols which are not letters        
-        train_text = self.train_text.lower()  # convert to lowercase  
-        train_text = ''.join([i for i in train_text if i in self.alphabet])           
-        train_text = train_text.split()  # split text in single words
+        self.corpus = self.train_text.lower()  # convert to lowercase  
+        self.corpus = ''.join([i for i in self.corpus if i in self.abc])           
+        self.corpus = self.corpus.split()  # split text in single words
 
         # find unique words and next words for each in bigramm model
-        for prev, curr in zip(train_text, train_text[1:]):
+        for prev, curr in zip(self.corpus, self.corpus[1:]):
             if prev not in self.words2.keys():
                 self.words2[prev] = []
             self.words2[prev].append(curr)
-        # trigramm model    
-        for prev, curr, n in zip(train_text, train_text[1:], train_text[2:]):
+        # same for trigramm model    
+        for prev, curr, n in zip(self.corpus,self.corpus[1:],self.corpus[2:]):
             if (prev, curr) not in self.words3.keys():
                 self.words3[(prev, curr)] = []
             self.words3[(prev, curr)].append(n)
@@ -69,20 +87,17 @@ class TextGenerator:
         self.words2 = dict([(k, v) for k,v in self.words2.items() if len(v)>0])
         self.words3 = dict([(k, v) for k,v in self.words3.items() if len(v)>0])
         
-        # DontRename&PlaceInOneFolder
-        save_data = [self.words2, self.words3]
-        with open('words', 'wb') as w:  # save data to file
-            pickle.dump(len(save_data), w)
-            for d in save_data:
-                pickle.dump(d, w)
+        return self.corpus, self.words2, self.words3
         
-   
         
+     
+    # Language n-gram models
     def bigramm_model(self):
         "Generate phrase in bigramm model"
         
         phrase = list()
-        words = [item for sublist in list(self.words2.values()) for item in sublist]
+        words = [item for sublist in list(self.words2.values()) \
+                 for item in sublist]
         
         # set initial word or pick random
         if self.init_word is not None:
@@ -111,7 +126,8 @@ class TextGenerator:
         "Generate phrase in trigramm model"
         
         phrase = list()
-        words = [item for sublist in list(self.words3.values()) for item in sublist]
+        words = [item for sublist in list(self.words3.values()) \
+                 for item in sublist]
         
         # set two initial words or pick random
         if self.init_word is not None:
@@ -148,10 +164,11 @@ class TextGenerator:
     
         
         
-    def generate(self):
+    def generate(self, model='trigram'):
         "Generation of phrase for initial word"
         
-        phrase = self.trigramm_model()        
+        if model == 'trigram':
+            phrase = self.trigramm_model()        
         res = ' '.join(phrase)  # save and print resulting phrase
         print(res)
         return res
@@ -162,7 +179,7 @@ class TextGenerator:
         data - list of names or None
         Preparing model:
         Load text to train model from list 'data', 
-        which contain names of text names.
+        which contain names of texts.
         If data is None load saved file
         """
         
@@ -174,12 +191,11 @@ class TextGenerator:
                 self.fit(source=i)
         else:
             # DontRename&PlaceInOneFolder
-            save_data = []
             with open('DontRename&PlaceInOneFolder', 'rb') as w:  # load data
-                for _ in range(pickle.load(w)):
-                    save_data.append(pickle.load(w))
-            self.words2 = save_data[0]
-            self.words3 = save_data[1]
+                self.train_text = pickle.load(w)
+        
+        self.corpus, self.words2, self.words3 = \
+            self._preprocess(self.train_text)
         
         
 
@@ -188,8 +204,8 @@ def main():
     
     gen = TextGenerator()  # initate model
     
-    train_texts = ['WarAndPeace1.txt', 'HarryPotter.txt']  #['result.json']
-    gen.prepare_model(data=train_texts)    
+    train_texts = ['WarAndPeace1.txt', 'HarryPotter.txt']  # ['result.json']
+    gen.prepare_model(data=train_texts)  # data=train_texts   
     #start_word = str(input('Enter your word:'))  # generate phrase from word
     #gen.init_word = 'утро доброе'
     p = gen.generate()    
