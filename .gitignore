@@ -3,8 +3,9 @@ DontRename&PlaceInOneFolder
 *.txt
 *.ico
 *.rar
-prog/Text_Generator/Text_Generator.exe
-prog/Text_GeneratorGUI.py
+prog
 *.json
 word_generator.ui
 words
+gui.py
+DontRename&PlaceInOneFolder.pkl
