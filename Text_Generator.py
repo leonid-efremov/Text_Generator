@@ -16,7 +16,7 @@ import json
 import pickle
 from random import choice
 from Lang_gen import trigramm_model, lang_preprocess
-from LSTM_gen import CharRNN, train, predict, sample, encode
+from LSTM_gen import TextGenerator_LSTM
 
 
 
@@ -89,11 +89,13 @@ class TextGenerator:
         
         elif self.model_type == 'LSTM':
             # net parameters
-            n_hidden = 512
-            n_layers = 2
+            layers_sizes =  {'hidden_size': 128, 
+                            'embedding_size': 128}
             tokens = self.train_text.lower()  # convert to lowercase  
             tokens = ''.join([i for i in tokens if i in self.abc])
-            self.LSTM_model = CharRNN(self.train_text, n_hidden, n_layers)
+                        
+            self.LSTM_model = TextGenerator_LSTM(layers_sizes, tokens, 
+                                                 self.abc, n_layers=2)
             
             
     def generate(self):
@@ -105,18 +107,18 @@ class TextGenerator:
             res = ' '.join(phrase)  # save and print resulting phrase
             
         elif self.model_type == 'LSTM':
+            
             # train parameters
-            batch_size = 128
-            seq_length = 100
-            n_epochs =  10
+            batch_size = 16
+            seq_len = 256
+            n_epochs =  1000
+            lr = 1e-3
             
-            encoded, _, _, _ = encode(self.train_text)
-            train(self.LSTM_model, epochs=n_epochs, batch_size=batch_size, 
-                  seq_length=seq_length, lr=0.001, print_every=10)
+            self.LSTM_model.train(batch_size, seq_len, 
+                                  n_epochs=n_epochs, lr=lr)
             
-            prime = self.init_word if self.init_word else choice(self.corpus)
-            res = sample(self.LSTM_model, self.num_words*10, prime=prime, top_k=2)
-            
+            res = self.LSTM_model.evaluate(batch_size, temp=0.3, 
+                                           prediction_len=1000, start_text=' ')
         print(res)
         return res
             
