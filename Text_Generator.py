@@ -14,8 +14,8 @@ main файл:
 import os 
 import json
 import pickle
-from random import choice
-from Lang_gen import trigramm_model, lang_preprocess
+import torch
+from Lang_gen import trigramm_model, preprocess
 from LSTM_gen import TextGenerator_LSTM
 
 
@@ -35,7 +35,7 @@ class TextGenerator:
         
         a = ord('а')  # add all letters which needed - Russian alphabet (abc)
         self.abc = ''.join([chr(i) for i in range(a, a + 32)] 
-                                + [' '] + ['\n'] + [chr(a + 33)])
+                                + [' '] + [chr(a + 33)])
         
 
     def load_text(self, source='WarAndPeace1.txt'):
@@ -62,7 +62,8 @@ class TextGenerator:
             pickle.dump(self.train_text, w)
     
     
-    def prepare_model(self, data=None):
+    def prepare_model(self, data=None, layers_sizes={'hidden_size': 128, 
+                     'embedding_size': 128}, pretrained=True):
         """
         data - list of names or None
         Preparing model:
@@ -71,69 +72,79 @@ class TextGenerator:
         If data is None load saved file
         """
         
+        self.pretrained = pretrained
+        
         # loading data
         if data is not None:  
             for i in data:
                 self.load_text(source=i)
         else:
-            # DontRename&PlaceInOneFolder
-            with open('DontRename&PlaceInOneFolder.pkl', 'rb') as w:
+            #with open('DontRename&PlaceInOneFolder.pkl', 'rb') as w:
+            with open('words.pkl', 'rb') as w:
                 self.train_text = pickle.load(w)
         
-        # setup and train model
-        self.corpus, _, _ = lang_preprocess(self.train_text, self.abc)
-        
+        # setup model
         if self.model_type == 'Lang':
-            _, self.words2, self.words3 = lang_preprocess(
-                self.train_text, self.abc) 
+            self.corpus, self.words2, self.words3 = preprocess(self.train_text,
+                                                    self.abc, for_lang=True)                
+            self.corpus = self.corpus.split()  # split text in single words
         
         elif self.model_type == 'LSTM':
             # net parameters
-            layers_sizes =  {'hidden_size': 128, 
-                            'embedding_size': 128}
-            tokens = self.train_text.lower()  # convert to lowercase  
-            tokens = ''.join([i for i in tokens if i in self.abc])
-                        
-            self.LSTM_model = TextGenerator_LSTM(layers_sizes, tokens, 
-                                                 self.abc, n_layers=2)
+            self.corpus, _, _ = preprocess(self.train_text, self.abc, 
+                                           for_lang=False)
+            self.LSTM_model = TextGenerator_LSTM(layers_sizes, self.corpus, 
+                                                 self.abc, n_layers=2, 
+                                                 pretrained=self.pretrained)
             
             
-    def generate(self):
-        "Generation of phrase for initial word"
+    def generate(self, train_parameters={'batch_size': 64,'seq_len': 256,
+                                         'n_epochs': 4000,'lr': 1e-3}):
+        "Generate phrase from initial word"
+        
+        start_text = self.init_word if self.init_word else ' '
         
         if self.model_type == 'Lang':
             phrase = trigramm_model(self.init_word, self.words2, self.words3, 
                                     num_words=self.num_words)
             res = ' '.join(phrase)  # save and print resulting phrase
+           
+        elif self.model_type == 'LSTM':  
             
-        elif self.model_type == 'LSTM':
+            if not self.pretrained:
+                batch_size = train_parameters['batch_size']
+                seq_len = train_parameters['seq_len']
+                n_epochs =  train_parameters['n_epochs']
+                lr = train_parameters['lr']
             
-            # train parameters
-            batch_size = 16
-            seq_len = 256
-            n_epochs =  1000
-            lr = 1e-3
+                self.LSTM_model.train(batch_size, seq_len, n_epochs=n_epochs, 
+                                      lr=lr, save_model=True)
             
-            self.LSTM_model.train(batch_size, seq_len, 
-                                  n_epochs=n_epochs, lr=lr)
-            
-            res = self.LSTM_model.evaluate(batch_size, temp=0.3, 
-                                           prediction_len=1000, start_text=' ')
+            res = self.LSTM_model.evaluate(temp=0.3, prediction_len=500, 
+                                           start_text=start_text)
         print(res)
         return res
             
     
-    
-                   
+
 if __name__ == '__main__':  
     
-    gen = TextGenerator(model_type='LSTM')  # initate model
+    gen = TextGenerator(model_type='LSTM')  # initate model    
+    train_texts = ['HarryPotter.txt']  # ['result.json']
     
-    train_texts = ['WarAndPeace1.txt', 'HarryPotter.txt']  # ['result.json']
-    gen.prepare_model(data=train_texts)  # data=train_texts   
+    layers_sizes =  {'hidden_size': 128, 
+                     'embedding_size': 128}
+    gen.prepare_model(layers_sizes=layers_sizes,
+                      pretrained=True)  # data=train_texts,  
+    
     #start_word = str(input('Enter your word:'))  # generate phrase from word
     #gen.init_word = 'утро доброе'  # start_word
-    p = gen.generate()    
+    
+    train_parameters = {'batch_size': 64,
+                        'seq_len': 256,
+                        'n_epochs': 5000,
+                        'lr': 1e-3}
+    p = gen.generate(train_parameters=train_parameters)   
     
     
     

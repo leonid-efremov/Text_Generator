@@ -6,7 +6,7 @@ Created on Wed Mar 30 17:19:42 2022
 """
 
 import numpy as np
-from tqdm import trange
+import matplotlib.pyplot as plt
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -32,28 +32,17 @@ print(sample(net, 500, prime='christmas', top_k=2))
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def encode(text):
+def encode(text, chars):
     """
     Encode text from string to integer
     """
     
-    chars = list(set(text))
     int2char = dict(enumerate(chars))
     char2int = {ch: ii for ii, ch in int2char.items()}
     
     encoded_text = np.array([char2int[ch] for ch in text])
     
     return encoded_text, chars, int2char, char2int
-
-def one_hot_encode(arr, n_labels):
-    
-    # Initialize the the encoded array
-    one_hot = np.zeros((arr.size, n_labels), dtype=np.float32)
-    # Fill the appropriate elements with ones
-    one_hot[np.arange(one_hot.shape[0]), arr.flatten()] = 1.
-    # Finally reshape it to get back to the original array
-    one_hot = one_hot.reshape((*arr.shape, n_labels))
-    return one_hot
 
 def get_batches(arr, batch_size, seq_length):
     """
@@ -100,17 +89,6 @@ def get_batch(sequence, batch_size, seq_len):
         targets.append(target)
     return torch.stack(trains, dim=0), torch.stack(targets, dim=0)
 
-def save_model(net):
-    # change the name, for saving multiple files
-    model_name = 'poem_4_epoch.net'
-    checkpoint = {'n_hidden': net.n_hidden,
-                  'n_layers': net.n_layers,
-                  'state_dict': net.state_dict(),
-                  'tokens': net.chars}
-    with open(model_name, 'wb') as f:
-        torch.save(checkpoint, f)
-
-
 
 class TextRNN(nn.Module):
     
@@ -142,80 +120,103 @@ class TextRNN(nn.Module):
         return hidden
     
 class TextGenerator_LSTM:
-    def __init__(self, layers_sizes, train_text, abc, n_layers):
+    
+    def __init__(self, layers_sizes, train_text, abc, n_layers, pretrained):
+        
         self.abc = abc
         self.text = train_text
-        self.encoded_text, _, self.idx_to_char, self.char_to_idx = encode(self.text)
+        self.encoded_text, _, self.idx_to_char, self.char_to_idx = \
+            encode(self.text, self.abc)
         
-        self.model = TextRNN(input_size=len(self.idx_to_char), 
-                             hidden_size=layers_sizes['hidden_size'], 
-                             embedding_size=layers_sizes['embedding_size'], 
-                             n_layers=n_layers)
+        if pretrained:
+            self.model = torch.load('LSTMmodel.torch')
+        else:
+            self.model = TextRNN(input_size=len(self.idx_to_char), 
+                                 hidden_size=layers_sizes['hidden_size'], 
+                                 embedding_size=layers_sizes['embedding_size'], 
+                                 n_layers=n_layers)
         self.model.to(device)
+        
     
-    def train(self, batch_size, seq_len, n_epochs=10000, lr=1e-3):
-        
-        model = self.model
-        
+    def train(self, batch_size, seq_len, n_epochs=10000, lr=1e-3, 
+              save_model=True):
+        """ 
+        Training a network 
+    
+            Arguments
+            ---------        
+            batch_size: Number of mini-sequences per mini-batch, aka batch size
+            seq_length: Number of character steps per mini-batch
+            n_epochs: Number of epochs to train
+            lr: learning rate
+        """
         criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, amsgrad=True)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, 
-            patience=5, 
-            verbose=True, 
-            factor=0.5)
-        
-        loss_avg = []
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, amsgrad=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 
+                                                               patience=5, 
+                                                               verbose=True, 
+                                                               factor=0.5)
+        self.loss_list = []
 
         for epoch in range(n_epochs):
-            model.train()
+            self.model.train()
             train, target = get_batch(self.encoded_text, batch_size, seq_len)
             train = train.permute(1, 0, 2).to(device)
             target = target.permute(1, 0, 2).to(device)
-            hidden = model.init_hidden(batch_size)
+            hidden = self.model.init_hidden(batch_size)
 
-            output, hidden = model(train, hidden)
+            output, hidden = self.model(train, hidden)
             loss = criterion(output.permute(1, 2, 0), target.squeeze(-1).permute(1, 0))
         
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-        
-            loss_avg.append(loss.item())
-            if len(loss_avg) >= 50:
-                mean_loss = np.mean(loss_avg)
-                print(f'Loss: {mean_loss}')
-                scheduler.step(mean_loss)
-                loss_avg = []
-                predicted_text = self.evaluate(model)
+            self.loss_list.append(loss.item())
+            
+            if epoch % 50 == 0:
+                print('Iteration number %i/%i, Loss: %.4f' \
+                      %(epoch, n_epochs, self.loss_list[-1]))
+                scheduler.step(self.loss_list[-1])
+                predicted_text = self.evaluate()
                 print(predicted_text)
                 
-    def evaluate(self, model, start_text=' ', prediction_len=200, temp=0.3):
+        if save_model:
+            torch.save(self.model, 'LSTMmodel.torch')
+                
+                
+    def evaluate(self, start_text=' ', prediction_len=200, temp=0.3):
+        """
+        Given a character, predict the next character.
+        Returns the predicted character and the hidden state.
+        """
+        self.model.eval()
         
-        model = self.model
-        char_to_idx, idx_to_char = self.char_to_idx, self.idx_to_char
+        predicted_text = start_text        
+        idx_input = [self.char_to_idx[char] for char in start_text]
         
-        model.eval()
-        
-        hidden = model.init_hidden()
-        idx_input = [char_to_idx[char] for char in start_text]
-        train = torch.LongTensor(idx_input).view(-1, 1, 1).to(device)
-        predicted_text = start_text
-        
-        _, hidden = model(train, hidden)
+        hidden = self.model.init_hidden()        
+        train = torch.LongTensor(idx_input).view(-1, 1, 1).to(device)        
+        _, hidden = self.model(train, hidden)
             
         inp = train[-1].view(-1, 1, 1)
         
         for i in range(prediction_len):
-            output, hidden = model(inp.to(device), hidden)
+            output, hidden = self.model(inp.to(device), hidden)
             output_logits = output.cpu().data.view(-1)
+            
             p_next = F.softmax(output_logits / temp, dim=-1).detach().cpu().data.numpy()        
-            top_index = np.random.choice(len(char_to_idx), p=p_next)
+            top_index = np.random.choice(len(self.char_to_idx), p=p_next)
             inp = torch.LongTensor([top_index]).view(-1, 1, 1).to(device)
-            predicted_char = idx_to_char[top_index]
+            
+            predicted_char = self.idx_to_char[top_index]
             predicted_text += predicted_char
         
-        return predicted_text
+        return predicted_text        
+    
+    
+    def check_model(self):
+        
+        plt.plot(self.loss_list)
 
 
 
