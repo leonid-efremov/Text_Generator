@@ -16,10 +16,13 @@ def preprocess(text, abc, for_lang=False):
     words3 = dict()
     
     # remove all sybols which are not letters        
-    corpus = text.lower()  # convert to lowercase  
-    corpus = ''.join([i for i in corpus if i in abc])       
+    corpus = text['text'].sum().lower()  # convert to lowercase 
+    corpus = corpus.replace('\n', ' ')
+    corpus = ''.join([i for i in corpus if i in abc])   
     
     if for_lang:
+        corpus = corpus.split()   
+        
         # find unique words and next words for each in bigramm model
         for prev, curr in zip(corpus, corpus[1:]):
             if prev not in words2.keys():

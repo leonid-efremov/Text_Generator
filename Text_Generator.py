@@ -4,28 +4,27 @@ Created on Sat Dec 18 16:45:42 2021
 
 @author: Leonid_PC
 
-Генератор теста
-main файл:
-    - простая грамматическая модель
-    - интерфейс для вызова LSTM модели
-    - основная программа
+Основной класс, содержащий все модели, методы тренировки и подготовки данных
 """
 
 import os 
 import json
 import pickle
-import torch
+import pandas as pd
 from Lang_gen import trigramm_model, preprocess
 from LSTM_gen import TextGenerator_LSTM
 
 
+DATA_PATH = 'data/'
+
 
 class TextGenerator:
 
-    def __init__(self, model_type='LSTM'):
+    def __init__(self, model_type='LSTM', data_path=DATA_PATH):
         """
         Class for generating text
         """
+        self.data_path = data_path
         
         self.model_type = model_type
 
@@ -36,34 +35,10 @@ class TextGenerator:
         a = ord('а')  # add all letters which needed - Russian alphabet (abc)
         self.abc = ''.join([chr(i) for i in range(a, a + 32)] 
                                 + [' '] + [chr(a + 33)])
-        
-
-    def load_text(self, source='WarAndPeace1.txt'):
-        """
-        Train model: for words in 'source' find next words
-        Save into pickle binary format
-        """
-
-        file_name, file_extension = os.path.splitext(source)
-        
-        if file_extension == '.txt':
-            with open(source, 'r') as f:  # read text from file
-                self.train_text = f.read()  
-                
-        elif file_extension == '.json':
-            with open(source, 'r', encoding="utf-8") as f:
-                t = json.load(f)  # loading chat from telegram
-                self.train_text = str()
-                for i in t['messages']:
-                    self.train_text += str(i['text']) + ' '  
-
-        #with open('DontRename&PlaceInOneFolder.pkl', 'wb') as w:
-        with open('words.pkl', 'wb') as w:  # save data to file
-            pickle.dump(self.train_text, w)
     
     
-    def prepare_model(self, data=None, layers_sizes={'hidden_size': 128, 
-                     'embedding_size': 128}, pretrained=True):
+    def prepare(self, file_path, layers_sizes={'hidden_size': 128, 
+                'embedding_size': 128}, pretrained=True):
         """
         data - list of names or None
         Preparing model:
@@ -75,19 +50,12 @@ class TextGenerator:
         self.pretrained = pretrained
         
         # loading data
-        if data is not None:  
-            for i in data:
-                self.load_text(source=i)
-        else:
-            #with open('DontRename&PlaceInOneFolder.pkl', 'rb') as w:
-            with open('words.pkl', 'rb') as w:
-                self.train_text = pickle.load(w)
+        self.train_text = pd.read_csv(self.data_path + file_path)
         
         # setup model
         if self.model_type == 'Lang':
             self.corpus, self.words2, self.words3 = preprocess(self.train_text,
-                                                    self.abc, for_lang=True)                
-            self.corpus = self.corpus.split()  # split text in single words
+                                                    self.abc, for_lang=True)
         
         elif self.model_type == 'LSTM':
             # net parameters
@@ -129,16 +97,12 @@ class TextGenerator:
 
 if __name__ == '__main__':  
     
-    gen = TextGenerator(model_type='LSTM')  # initate model    
-    train_texts = ['HarryPotter.txt']  # ['result.json']
+    gen = TextGenerator(model_type='Lang')  # initate model    
+    train_texts = 'books.csv'  # 'dialog.csv'
     
     layers_sizes =  {'hidden_size': 128, 
                      'embedding_size': 128}
-    gen.prepare_model(layers_sizes=layers_sizes,
-                      pretrained=True)  # data=train_texts,  
-    
-    #start_word = str(input('Enter your word:'))  # generate phrase from word
-    #gen.init_word = 'утро доброе'  # start_word
+    gen.prepare(file_path=train_texts, layers_sizes=layers_sizes, pretrained=True)
     
     train_parameters = {'batch_size': 64,
                         'seq_len': 256,
