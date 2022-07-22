@@ -14,3 +14,5 @@ src/
 data/
 Programm/
 ru-gpts/
+__pycache__/
+*.pyc

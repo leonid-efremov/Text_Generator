@@ -11,8 +11,8 @@ import os
 import json
 import pickle
 import pandas as pd
-from Lang_gen import trigramm_model, preprocess
-from LSTM_gen import TextGenerator_LSTM
+from models.Lang_gen import trigramm_model, preprocess
+from models.LSTM_gen import TextGenerator_LSTM
 
 
 DATA_PATH = 'data/'
@@ -34,7 +34,7 @@ class TextGenerator:
         
         a = ord('а')  # add all letters which needed - Russian alphabet (abc)
         self.abc = ''.join([chr(i) for i in range(a, a + 32)] 
-                                + [' '] + [chr(a + 33)])
+                                 + [' '] + [chr(a + 33)])
     
     
     def prepare(self, file_path, layers_sizes={'hidden_size': 128, 
@@ -97,18 +97,18 @@ class TextGenerator:
 
 if __name__ == '__main__':  
     
-    gen = TextGenerator(model_type='Lang')  # initate model    
+    model = TextGenerator(model_type='LSTM')  # initate model    
     train_texts = 'books.csv'  # 'dialog.csv'
     
     layers_sizes =  {'hidden_size': 128, 
                      'embedding_size': 128}
-    gen.prepare(file_path=train_texts, layers_sizes=layers_sizes, pretrained=True)
+    model.prepare(file_path=train_texts, layers_sizes=layers_sizes, pretrained=True)
     
     train_parameters = {'batch_size': 64,
                         'seq_len': 256,
                         'n_epochs': 5000,
                         'lr': 1e-3}
-    p = gen.generate(train_parameters=train_parameters)   
+    p = model.generate(train_parameters=train_parameters)   
     
     
     

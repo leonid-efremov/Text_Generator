@@ -12,25 +12,8 @@ from torch import nn
 import torch.nn.functional as F
 
 
-
-"""
-# define and print the net
-n_hidden = 512
-n_layers = 2
-net = CharRNN(chars, n_hidden, n_layers)
-print(net)
-batch_size = 128
-seq_length = 100
-n_epochs =  10  # start small if you are just testing initial behavior
-# train the model
-train(net, encoded, epochs=n_epochs, batch_size=batch_size, 
-      seq_length=seq_length, lr=0.001, print_every=10)
-    
-print(sample(net, 500, prime='christmas', top_k=2))
-"""
-
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 def encode(text, chars):
     """
@@ -129,7 +112,7 @@ class TextGenerator_LSTM:
             encode(self.text, self.abc)
         
         if pretrained:
-            self.model = torch.load('LSTMmodel.torch')
+            self.model = torch.load('models/LSTMmodel.torch')
         else:
             self.model = TextRNN(input_size=len(self.idx_to_char), 
                                  hidden_size=layers_sizes['hidden_size'], 
@@ -181,7 +164,7 @@ class TextGenerator_LSTM:
                 print(predicted_text)
                 
         if save_model:
-            torch.save(self.model, 'LSTMmodel.torch')
+            torch.save(self.model, 'models/LSTMmodel.torch')
                 
                 
     def evaluate(self, start_text=' ', prediction_len=200, temp=0.3):

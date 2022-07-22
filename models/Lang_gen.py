@@ -18,7 +18,8 @@ def preprocess(text, abc, for_lang=False):
     # remove all sybols which are not letters        
     corpus = text['text'].sum().lower()  # convert to lowercase 
     corpus = corpus.replace('\n', ' ')
-    corpus = ''.join([i for i in corpus if i in abc])   
+    corpus = ''.join([i for i in corpus if i in abc])
+    corpus = ' '.join(corpus.split())  
     
     if for_lang:
         corpus = corpus.split()   
