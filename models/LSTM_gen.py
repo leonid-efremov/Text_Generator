@@ -12,6 +12,7 @@ from torch import nn
 import torch.nn.functional as F
 
 
+MODELS_PATH = 'models/'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -112,7 +113,7 @@ class TextGenerator_LSTM:
             encode(self.text, self.abc)
         
         if pretrained:
-            self.model = torch.load('models/LSTMmodel.torch')
+            self.model = torch.load(MODELS_PATH + 'LSTMmodel.torch')
         else:
             self.model = TextRNN(input_size=len(self.idx_to_char), 
                                  hidden_size=layers_sizes['hidden_size'], 
@@ -164,7 +165,7 @@ class TextGenerator_LSTM:
                 print(predicted_text)
                 
         if save_model:
-            torch.save(self.model, 'models/LSTMmodel.torch')
+            torch.save(self.model, MODELS_PATH + 'LSTMmodel.torch')
                 
                 
     def evaluate(self, start_text=' ', prediction_len=200, temp=0.3):

@@ -7,11 +7,9 @@ Created on Sat Dec 18 16:45:42 2021
 Основной класс, содержащий все модели, методы тренировки и подготовки данных
 """
 
-import os 
-import json
-import pickle
 import pandas as pd
-from models.Lang_gen import trigramm_model, preprocess
+from prepare_data import abc
+from models.Lang_gen import trigramm_model, prepare_for_lang
 from models.LSTM_gen import TextGenerator_LSTM
 
 
@@ -28,13 +26,11 @@ class TextGenerator:
         
         self.model_type = model_type
 
-        self.train_text = None        
+        self.corpus = None        
         self.init_word = None
         self.num_words = 15
-        
-        a = ord('а')  # add all letters which needed - Russian alphabet (abc)
-        self.abc = ''.join([chr(i) for i in range(a, a + 32)] 
-                                 + [' '] + [chr(a + 33)])
+
+        self.abc = abc
     
     
     def prepare(self, file_path, layers_sizes={'hidden_size': 128, 
@@ -50,20 +46,21 @@ class TextGenerator:
         self.pretrained = pretrained
         
         # loading data
-        self.train_text = pd.read_csv(self.data_path + file_path)
+        self.corpus = pd.read_csv(self.data_path + file_path)
+        self.corpus = ' '.join(list(self.corpus['text']))
         
         # setup model
         if self.model_type == 'Lang':
-            self.corpus, self.words2, self.words3 = preprocess(self.train_text,
-                                                    self.abc, for_lang=True)
+            self.corpus, self.words2, self.words3 = prepare_for_lang(self.corpus)
         
         elif self.model_type == 'LSTM':
             # net parameters
-            self.corpus, _, _ = preprocess(self.train_text, self.abc, 
-                                           for_lang=False)
             self.LSTM_model = TextGenerator_LSTM(layers_sizes, self.corpus, 
                                                  self.abc, n_layers=2, 
                                                  pretrained=self.pretrained)
+                                                
+        else:
+            assert self.model_type in ['Lang', 'LSTM'], 'Select correct model type!'
             
             
     def generate(self, train_parameters={'batch_size': 64,'seq_len': 256,
