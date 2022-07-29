@@ -8,11 +8,12 @@ Created on Sat Dec 18 16:45:42 2021
 """
 
 import pandas as pd
-from prepare_data import abc
 from models.Lang_gen import trigramm_model, prepare_for_lang
 from models.LSTM_gen import TextGenerator_LSTM
 
 
+a = ord('а')  # add all letters which needed - Russian alphabet (abc)
+abc = ''.join([chr(i) for i in range(a, a + 32)] + [' '] + [chr(a + 33)])
 DATA_PATH = 'data/'
 
 
@@ -33,8 +34,8 @@ class TextGenerator:
         self.abc = abc
     
     
-    def prepare(self, file_path, layers_sizes={'hidden_size': 128, 
-                'embedding_size': 128}, pretrained=True):
+    def prepare(self, file_path, only_words=False,
+                layers_sizes={'hidden_size': 128, 'embedding_size': 128}, pretrained=True):
         """
         data - list of names or None
         Preparing model:
@@ -46,21 +47,32 @@ class TextGenerator:
         self.pretrained = pretrained
         
         # loading data
-        self.corpus = pd.read_csv(self.data_path + file_path)
-        self.corpus = ' '.join(list(self.corpus['text']))
+        self.train_text = pd.read_csv(self.data_path + file_path)
+        self.train_text = ' '.join(list(self.train_text['text']))
+
+        if only_words:
+            self.corpus = self.train_text.lower()
+            self.corpus = ''.join([i for i in self.corpus if i in self.abc])
+        else:
+            self.corpus = self.train_text
         
         # setup model
         if self.model_type == 'Lang':
+            assert set(self.corpus).issubset(self.abc), 'Choose correct text preparation method'
             self.corpus, self.words2, self.words3 = prepare_for_lang(self.corpus)
         
         elif self.model_type == 'LSTM':
+            assert set(self.corpus).issubset(self.abc), 'Choose correct text preparation method'
             # net parameters
             self.LSTM_model = TextGenerator_LSTM(layers_sizes, self.corpus, 
                                                  self.abc, n_layers=2, 
                                                  pretrained=self.pretrained)
+        
+        elif self.model_type == 'GPT':
+            pass
                                                 
         else:
-            assert self.model_type in ['Lang', 'LSTM'], 'Select correct model type!'
+            assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
             
             
     def generate(self, train_parameters={'batch_size': 64,'seq_len': 256,
@@ -87,6 +99,13 @@ class TextGenerator:
             
             res = self.LSTM_model.evaluate(temp=0.3, prediction_len=500, 
                                            start_text=start_text)
+                                           
+        elif self.model_type == 'GPT':
+            pass
+                                                
+        else:
+            assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
+
         print(res)
         return res
             

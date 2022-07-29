@@ -9,7 +9,9 @@ import pandas as pd
 
 
 a = ord('а')  # add all letters which needed - Russian alphabet (abc)
-abc = ''.join([chr(i) for i in range(a, a + 32)] + [' '] + [chr(a + 33)])
+abc_full = ''.join([chr(i) for i in range(a, a + 32)] + [chr(a + 33)] \
+                 + [chr(i).upper() for i in range(a, a + 32)] + [chr(a + 33).upper()] \
+                 + [' '] + ['!', '?', '.', ',', ')', '(', ':', ';', '-'])
 
 
 def prepare_txt(file_paths, out_path, save=False):
@@ -61,9 +63,9 @@ def prepare_json(file_path, out_path, save=False):
 def prepare_text(text):     
     
     # remove all sybols which are not letters 
-    res = str(text).lower() # convert to lowercase
-    res = res.replace('\n', ' ')
-    res = ''.join([i for i in res if i in abc])
+    res = str(text).replace('\n', ' ')
+    #res = res.lower() # convert to lowercase
+    res = ''.join([i for i in res if i in abc_full])
     res = ' '.join(res.split())
 
     return res
