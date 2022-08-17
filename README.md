@@ -1,2 +1,3 @@
 # Text Generator
- text generator
+ 1. Simple 2(3)-gram model
+ 2. LSTM model

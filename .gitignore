@@ -16,3 +16,4 @@ Programm/
 ru-gpts/
 __pycache__/
 *.pyc
+*.zip

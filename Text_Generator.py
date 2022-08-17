@@ -48,7 +48,9 @@ class TextGenerator:
         
         # loading data
         self.train_text = pd.read_csv(self.data_path + file_path)
-        self.train_text = ' '.join(list(self.train_text['text']))
+        self.train_text = ' '.join(list(self.train_text['text'].astype(str))) 
+
+        self.train_text = self.train_text.replace(' nan', '')  # for text in json
 
         if only_words:
             self.corpus = self.train_text.lower()

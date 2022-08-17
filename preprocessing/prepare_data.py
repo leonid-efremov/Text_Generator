@@ -62,11 +62,10 @@ def prepare_json(file_path, out_path, save=False):
 
 def prepare_text(text):     
     
-    # remove all sybols which are not letters 
-    res = str(text).replace('\n', ' ')
+    res = str(text).replace('\n', ' ')  # remove all sybols which are not letters 
     #res = res.lower() # convert to lowercase
     res = ''.join([i for i in res if i in abc_full])
-    res = ' '.join(res.split())
+    res = ' '.join(res.split())  # remove extra spaces
 
     return res
 
@@ -94,7 +93,7 @@ def preprocess_data(file_path, out_path, save=False):
         assert isinstance(file_type, ('.txt', '.json')), 'Unknown file type!'
 
     corpus = res
-    corpus['text'] = corpus['text'].apply(prepare_text)
+    corpus['text'] = corpus['text'].apply(prepare_text)   
 
     if save:  # save data to file
         corpus.to_csv(out_path, index=False)
