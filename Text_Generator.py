@@ -10,6 +10,7 @@ Created on Sat Dec 18 16:45:42 2021
 import pandas as pd
 from models.Lang_gen import trigramm_model, prepare_for_lang
 from models.LSTM_gen import TextGenerator_LSTM
+from models.GPT_gen import TextGenerator_GPT
 
 
 a = ord('а')  # add all letters which needed - Russian alphabet (abc)
@@ -69,7 +70,12 @@ class TextGenerator:
                                                  pretrained=self.pretrained)
         
         elif self.model_type == 'GPT':
-            pass
+            assert self.pretrained, 'Run training in Colab separately!'
+
+            model_type = file_path.split('.')[0]
+            assert model_type in ['books', 'dialogs'], 'Select one of pretrained model!'
+
+            self.GPT_model = TextGenerator_GPT(model_type=model_type)
                                                 
         else:
             assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
@@ -100,7 +106,7 @@ class TextGenerator:
                                            start_text=start_text)
                                            
         elif self.model_type == 'GPT':
-            assert self.pretrained, 'Run training in Colab separately!'
+            res = self.GPT_model.gen_from_pretrained(context=start_text, max_length=50) 
                                                 
         else:
             assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
