@@ -17,3 +17,5 @@ ru-gpts/
 __pycache__/
 *.pyc
 *.zip
+models/books_gpt/
+models/dialog_gpt/

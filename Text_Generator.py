@@ -20,9 +20,7 @@ DATA_PATH = 'data/'
 class TextGenerator:
 
     def __init__(self, model_type='LSTM', data_path=DATA_PATH):
-        """
-        Class for generating text
-        """
+        """Class for generating text"""
         self.data_path = data_path
         
         self.model_type = model_type
@@ -79,17 +77,16 @@ class TextGenerator:
             
     def generate(self, train_parameters={'batch_size': 64,'seq_len': 256,
                                          'n_epochs': 4000,'lr': 1e-3}):
-        "Generate phrase from initial word"
+        """Generate phrase from initial word"""
         
         start_text = self.init_word if self.init_word else ' '
         
         if self.model_type == 'Lang':
             phrase = trigramm_model(self.init_word, self.words2, self.words3, 
                                     num_words=self.num_words)
-            res = ' '.join(phrase)  # save and print resulting phrase
+            res = ' '.join(phrase)
            
-        elif self.model_type == 'LSTM':  
-            
+        elif self.model_type == 'LSTM':            
             if not self.pretrained:
                 batch_size = train_parameters['batch_size']
                 seq_len = train_parameters['seq_len']
@@ -103,7 +100,7 @@ class TextGenerator:
                                            start_text=start_text)
                                            
         elif self.model_type == 'GPT':
-            pass
+            assert self.pretrained, 'Run training in Colab separately!'
                                                 
         else:
             assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
