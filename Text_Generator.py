@@ -28,7 +28,7 @@ class TextGenerator:
 
         self.corpus = None        
         self.init_word = None
-        self.num_words = 15
+        self.max_len = 50
 
         self.abc = abc
     
@@ -45,17 +45,18 @@ class TextGenerator:
         
         self.pretrained = pretrained
         
-        # loading data
-        self.train_text = pd.read_csv(self.data_path + file_path)
-        self.train_text = ' '.join(list(self.train_text['text'].astype(str))) 
+        if self.model_type in ['Lang', 'LSTM']:
+            # loading data
+            self.train_text = pd.read_csv(self.data_path + file_path)
+            self.train_text = ' '.join(list(self.train_text['text'].astype(str))) 
 
-        self.train_text = self.train_text.replace(' nan', '')  # for text in json
+            self.train_text = self.train_text.replace(' nan', '')  # for text in json
 
-        if only_words:
-            self.corpus = self.train_text.lower()
-            self.corpus = ''.join([i for i in self.corpus if i in self.abc])
-        else:
-            self.corpus = self.train_text
+            if only_words:
+                self.corpus = self.train_text.lower()
+                self.corpus = ''.join([i for i in self.corpus if i in self.abc])
+            else:
+                self.corpus = self.train_text
         
         # setup model
         if self.model_type == 'Lang':
@@ -89,7 +90,7 @@ class TextGenerator:
         
         if self.model_type == 'Lang':
             phrase = trigramm_model(self.init_word, self.words2, self.words3, 
-                                    num_words=self.num_words)
+                                    num_words=self.max_len)
             res = ' '.join(phrase)
            
         elif self.model_type == 'LSTM':            
@@ -106,7 +107,7 @@ class TextGenerator:
                                            start_text=start_text)
                                            
         elif self.model_type == 'GPT':
-            res = self.GPT_model.gen_from_pretrained(context=start_text, max_length=50) 
+            res = self.GPT_model.gen_from_pretrained(context=start_text, max_length=self.max_len) 
                                                 
         else:
             assert self.model_type in ['Lang', 'LSTM', 'GPT'], 'Select correct model type!'
@@ -118,18 +119,12 @@ class TextGenerator:
 
 if __name__ == '__main__':  
     
-    model = TextGenerator(model_type='LSTM')  # initate model    
-    train_texts = 'books.csv'  # 'dialog.csv'
+    model = TextGenerator(model_type='GPT')
+
+    train_texts = 'books.csv'    
+    model.prepare(train_texts, only_words=True, pretrained=True)
     
-    layers_sizes =  {'hidden_size': 128, 
-                     'embedding_size': 128}
-    model.prepare(file_path=train_texts, layers_sizes=layers_sizes, pretrained=True)
-    
-    train_parameters = {'batch_size': 64,
-                        'seq_len': 256,
-                        'n_epochs': 5000,
-                        'lr': 1e-3}
-    p = model.generate(train_parameters=train_parameters)   
+    phrase = model.generate()
     
     
     

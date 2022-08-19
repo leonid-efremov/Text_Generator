@@ -6,7 +6,6 @@ Created on Wed Mar 30 17:19:42 2022
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -195,12 +194,7 @@ class TextGenerator_LSTM:
             predicted_char = self.idx_to_char[top_index]
             predicted_text += predicted_char
         
-        return predicted_text        
-    
-    
-    def check_model(self):
-        
-        plt.plot(self.loss_list)
+        return predicted_text
 
 
 
