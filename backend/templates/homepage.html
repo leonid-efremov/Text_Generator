@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Generator App</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+</head>
+
+<body>
+    <div style="margin-top: 50px;" class="ui container">
+        <h1 class="ui center aligned header">Text Generator App</h1>  <!-- App header name -->
+
+        <form class="ui form" action="/add" method="post">  <!-- First form for init word -->
+            {% csrf_token %}
+            <div class="field">
+                <label>Initial words:</label>  <!-- Description on first form -->
+                <input type="text" name="init_word" placeholder="Enter or not to enter..."><br>  <!-- Content of 1F -->
+            </div>
+            <div class="field">
+                <label>Max length:</label>  <!-- Description on 2nd field -->
+                <input type="text" name="max_len" placeholder="num"><br>  <!-- Content of 2F -->
+            </div>
+            <button class="ui blue button" type="submit">Generate</button>  <!-- Add button -->
+        </form>
+
+        <hr>
+
+        {% for phrase in phrase_list %}  <!-- Displaying  list of content from db-->
+        <div class="ui segment">   <!-- Add delete button -->
+            <p class="ui big header">{{ phrase.phrase_id }} | {{ phrase.text }}</p>
+
+            <a class="ui red button" href="/delete/{{ phrase.id }}">Delete</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

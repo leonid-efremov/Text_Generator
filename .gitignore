@@ -20,3 +20,4 @@ __pycache__/
 models/books_gpt/
 models/dialog_gpt/
 models/LSTMmodel.torch
+.idea/
