@@ -2,19 +2,12 @@
 *.txt
 *.ico
 *.rar
-prog
 *.json
-word_generator.ui
-words
-gui.py
-DontRename&PlaceInOneFolder.pkl
 *.pyc
 *.stats
 src/
 data/
 Programm/
-ru-gpts/
-__pycache__/
 *.pyc
 *.zip
 models/books_gpt/
@@ -22,3 +15,4 @@ models/dialog_gpt/
 models/LSTMmodel.torch
 .idea/
 backend/.env
+.env
