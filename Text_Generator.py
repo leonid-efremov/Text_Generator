@@ -72,7 +72,7 @@ class TextGenerator:
             assert self.pretrained, 'Run training in Colab separately!'
 
             model_type = file_path.split('.')[0]
-            assert model_type in ['books', 'dialogs'], 'Select one of pretrained model!'
+            assert model_type in ['books', 'dialog'], 'Select one of pretrained model!'
 
             self.GPT_model = TextGenerator_GPT(model_type=model_type)
 
