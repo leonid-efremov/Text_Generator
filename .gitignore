@@ -6,13 +6,13 @@
 *.pyc
 *.stats
 src/
-data/
+main/data/
 Programm/
 *.pyc
 *.zip
-models/books_gpt/
-models/dialog_gpt/
-models/LSTMmodel.torch
+main/models/books_gpt/
+main/models/dialog_gpt/
+main/models/LSTMmodel.torch
 .idea/
 backend/.env
 .env

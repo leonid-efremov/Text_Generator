@@ -7,10 +7,12 @@ Created on Sat Dec 18 16:45:42 2021
 Основной класс, содержащий все модели, методы тренировки и подготовки данных
 """
 
+import sys
+sys.path.append("..")
 import pandas as pd
-from models.Lang_gen import trigramm_model, prepare_for_lang
-from models.LSTM_gen import TextGenerator_LSTM
-from models.GPT_gen import TextGenerator_GPT
+from main.models.Lang_gen import trigramm_model, prepare_for_lang
+from main.models.LSTM_gen import TextGenerator_LSTM
+from main.models.GPT_gen import TextGenerator_GPT
 
 a = ord('а')  # add all letters which needed - Russian alphabet (abc)
 abc = ''.join([chr(i) for i in range(a, a + 32)] + [' '] + [chr(a + 33)])

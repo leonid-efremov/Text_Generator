@@ -10,7 +10,8 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import logging
 logging.disable(level=logging.CRITICAL)
 
-MODELS_PATH = 'models/'
+MODELS_PATH = 'main/models/'
+MODELS_PATH_RESERVE = 'models/'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -18,10 +19,14 @@ class TextGenerator_GPT:
 
     def __init__(self, model_type):
         """Load pretrained model from model_path"""
-        self.md = MODELS_PATH + model_type + "_gpt/essays"
-
-        self.tokenizer = GPT2Tokenizer.from_pretrained(self.md)
-        self.model = GPT2LMHeadModel.from_pretrained(self.md)
+        try:
+            self.md = MODELS_PATH + model_type + "_gpt/essays"
+            self.tokenizer = GPT2Tokenizer.from_pretrained(self.md)
+            self.model = GPT2LMHeadModel.from_pretrained(self.md)
+        except OSError:
+            self.md = MODELS_PATH_RESERVE + model_type + "_gpt/essays"
+            self.tokenizer = GPT2Tokenizer.from_pretrained(self.md)
+            self.model = GPT2LMHeadModel.from_pretrained(self.md)
 
         self.model.to(device)
 

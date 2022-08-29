@@ -1,8 +1,12 @@
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from .models import TextGeneratorApp
-from Text_Generator import TextGenerator
+from main.Text_Generator import TextGenerator
+
+
+exchange_model = None
 
 
 def homepage(request):
@@ -18,12 +22,15 @@ def add(request):
     if not isinstance(max_len, int):
         max_len = int(max_len)
 
-    try:
-        model
-    except NameError:
+    global exchange_model
+    if exchange_model is not None:
+        model = exchange_model()
+    else:
         model = TextGenerator(model_type='GPT')
         train_texts = 'dialog.csv'  # books
         model.prepare(train_texts, pretrained=True)
+        def exchange_model():
+            return model
 
     model.init_word = init_word
     model.max_len = max_len
