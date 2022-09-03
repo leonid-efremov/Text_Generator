@@ -27,14 +27,14 @@ def add(request):
         model = exchange_model()
     else:
         model = TextGenerator(model_type='GPT')
-        train_texts = 'dialog.csv'  # books
+        train_texts = 'books.csv'
         model.prepare(train_texts, pretrained=True)
         def exchange_model():
             return model
 
     model.init_word = init_word
     model.max_len = max_len
-    text = model.generate() #  'put something here' * (int(max_len)//18)
+    text = model.generate()
 
     phrase = TextGeneratorApp(init_word=init_word, max_len=max_len, text=text)
     phrase.save()
