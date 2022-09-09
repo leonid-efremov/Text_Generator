@@ -1,5 +1,4 @@
 
-*.txt
 *.ico
 *.rar
 *.json
@@ -18,3 +17,4 @@ backend/.env
 .env
 *.sqlite3
 *.exe
+main/models/another_links.txt
